@@ -17,7 +17,6 @@ fn add_int(arguments: &mut [ZVal]) -> phper::Result<i64> {
 
 #[php_get_module]
 pub fn get_module() -> Module {
-    // New `Module` with extension info.
     let mut module = Module::new(
         env!("CARGO_CRATE_NAME"),
         env!("CARGO_PKG_VERSION"),
