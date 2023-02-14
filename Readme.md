@@ -20,15 +20,21 @@ After you need to open your ```php.ini``` file and add extension there:
 
 ### Doc
 
-Right now only two functions available:
+Right now only available function is:
 
-```add_double(x,y)```
+```add(x,y, return_type=ADD_RETURN_TYPE_DOUBLE)```
 
-Where x and y are ```double```
+Where ```x``` and ```y``` are either ```double``` or ```int```, ```return_type``` is optional.
 
-```add_int(x,y)```
+For return type you have two possible constants:
 
-Where x and y are ```int```
+```ADD_RETURN_TYPE_INT```
+
+```ADD_RETURN_TYPE_DOUBLE```
+
+```ADD_RETURN_TYPE_DOUBLE``` using by default, or when argument is invalid.
+
+```ADD_RETURN_TYPE_INT``` rounding double results. down ```<=0.5``` and up ```>0.5```
 
 ## Examples
 
