@@ -20,19 +20,16 @@ After you need to open your ```php.ini``` file and add extension there:
 
 ### Doc
 
-Right now only two functions available:
+Right now only available functions is:
 
-```add_double(x,y)```
+```add(x,y)```
 
-Where x and y are ```double```
+Where ```x``` and ```y``` are either ```double``` or ```int```.
 
-```add_int(x,y)```
-
-Where x and y are ```int```
 
 ## Examples
 
-You can test module functionality simply by using ```php -a``` in your terminal:
+You can test module functionality simply by executing commands in your terminal:
 
 ```php -a```
 

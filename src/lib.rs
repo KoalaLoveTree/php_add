@@ -1,18 +1,42 @@
-use phper::{functions::Argument, modules::Module, php_get_module, values::ZVal};
-use phper::sys::add_function;
+use phper::{functions::Argument, modules::Module, php_get_module, values::ZVal, Error};
 
-fn add_double(arguments: &mut [ZVal]) -> phper::Result<f64> {
-    let x = arguments[0].expect_double()?;
-    let y = arguments[1].expect_double()?;
-
-    Ok(x + y)
+enum PhpNumber {
+    Double(f64),
+    Integer(i64),
 }
 
-fn add_int(arguments: &mut [ZVal]) -> phper::Result<i64> {
-    let x = arguments[0].expect_long()?;
-    let y = arguments[1].expect_long()?;
+impl TryFrom<&ZVal> for PhpNumber {
+    type Error = Error;
 
-    Ok(x + y)
+    fn try_from(value: &ZVal) -> Result<Self, Self::Error> {
+        match value.expect_double() {
+            Ok(float) => Ok(PhpNumber::Double(float)),
+            Err(_err) => value
+                .expect_long()
+                .map(|int| Ok(PhpNumber::Integer(int)))?,
+        }
+    }
+}
+
+impl PhpNumber {
+    fn get_float(&self) -> f64 {
+        match self {
+            Self::Double(num) => *num,
+            Self::Integer(num) => *num as f64,
+        }
+    }
+}
+
+fn add(arguments: &mut [ZVal]) -> phper::Result<ZVal> {
+    let (x, y) = (&arguments[0], &arguments[1]);
+
+    let x: PhpNumber = x.try_into()?;
+    let y: PhpNumber = y.try_into()?;
+
+    match (x, y) {
+        (PhpNumber::Integer(x), PhpNumber::Integer(y)) => Ok(ZVal::from(x + y)),
+        (x, y) => Ok(ZVal::from(x.get_float() + y.get_float())),
+    }
 }
 
 #[php_get_module]
@@ -24,15 +48,9 @@ pub fn get_module() -> Module {
     );
 
     module
-        .add_function("add_double", add_double)
+        .add_function("add", add)
         .argument(Argument::by_val("x"))
         .argument(Argument::by_val("y"));
 
     module
-        .add_function("add_int", add_int)
-        .argument(Argument::by_val("x"))
-        .argument(Argument::by_val("y"));
-
-    module
-
 }
