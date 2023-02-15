@@ -1,52 +1,41 @@
-use crate::ReturnType::{Double, Integer};
-use phper::sys::add_function;
-use phper::{Error, functions::Argument, modules::Module, php_get_module, values::ZVal};
+use phper::{functions::Argument, modules::Module, php_get_module, values::ZVal, Error};
 
-enum ReturnType {
-    Double,
-    Integer,
+enum PhpNumber {
+    Double(f64),
+    Integer(i64),
+}
+
+impl TryFrom<&ZVal> for PhpNumber {
+    type Error = Error;
+
+    fn try_from(value: &ZVal) -> Result<Self, Self::Error> {
+        match value.expect_double() {
+            Ok(float) => Ok(PhpNumber::Double(float)),
+            Err(_err) => value
+                .expect_long()
+                .map(|int| Ok(PhpNumber::Integer(int)))?,
+        }
+    }
+}
+
+impl PhpNumber {
+    fn get_float(&self) -> f64 {
+        match self {
+            Self::Double(num) => *num,
+            Self::Integer(num) => *num as f64,
+        }
+    }
 }
 
 fn add(arguments: &mut [ZVal]) -> phper::Result<ZVal> {
-    let x = parse_numeric_arg(&mut arguments[0])?;
-    let y = parse_numeric_arg(&mut arguments[1])?;
+    let (x, y) = (&arguments[0], &arguments[1]);
 
-    let return_type = get_response_type_by_args_type(arguments)?;
+    let x: PhpNumber = x.try_into()?;
+    let y: PhpNumber = y.try_into()?;
 
-    match return_type {
-        Double => Ok(ZVal::from(x + y)),
-        Integer => Ok(ZVal::from((x + y) as i64)),
-    }
-}
-
-fn parse_numeric_arg(argument: &mut ZVal) -> Result<f64, Error> {
-    match argument.expect_double() {
-        Ok(float) => Ok(float),
-        Err(_err) => match argument.expect_long() {
-            Ok(int) => Ok(int as f64),
-            Err(err) => Err(err),
-        },
-    }
-}
-
-fn get_response_type_by_args_type(arguments: &[ZVal]) -> Result<ReturnType, Error> {
-    let return_type = match arguments[0].expect_double() {
-        Ok(_float) => Double,
-        Err(_err) => match arguments[0].expect_long() {
-            Ok(_int) => Integer,
-            Err(err) => return Err(err),
-        },
-    };
-
-    match return_type {
-        Double => Ok(Double),
-        Integer => match arguments[1].expect_double() {
-            Ok(_float) => Ok(Double),
-            Err(_err) => match arguments[1].expect_long() {
-                Ok(_int) => Ok(Integer),
-                Err(err) => Err(err),
-            },
-        },
+    match (x, y) {
+        (PhpNumber::Integer(x), PhpNumber::Integer(y)) => Ok(ZVal::from(x + y)),
+        (x, y) => Ok(ZVal::from(x.get_float() + y.get_float())),
     }
 }
 
